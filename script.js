@@ -3,9 +3,7 @@ btnLimpar = document.querySelector('#limpar')
 listaAlunos = document.querySelector('#listaAlunos')
 mensagemErro = document.querySelector('#mensagemErro')
 
-const alunos = []
-
-adicionarElementos()
+let alunos = []
 
 btnLimpar.addEventListener('click', (e) => {
     e.preventDefault()
@@ -47,24 +45,34 @@ function adicionarAluno(){
         situacao: situacao
     };
 
-    alunos.unshift(novoAluno)
-    adicionarElementos(nome,id,media,situacao)
+    alunos.push(novoAluno)
+    localStorage.setItem(`ALUNOS${alunos.length - 1}`, JSON.stringify(novoAluno))
+    adicionarElementos()
 }
 
-function adicionarElementos(nome,id,media,situacao){
+function adicionarElementos() {
     listaAlunos.innerHTML = "";
-    alunos.forEach((aluno,index) =>{
-        const novoAluno = document.createElement('li')
-        novoAluno.innerHTML = `<h1>Nome: ${aluno.nome}</h1>
-                            <p>ID: ${aluno.ID}</p>
-                            <p>Média: ${aluno.media}</p>
-                            <p>Situação: ${aluno.situacao}</p>
-                            <button onclick ="editarAluno(${index})">Editar</button>
-                            <button onclick ="apagarAluno(${index})">Apagar</button>
-                            `
-        listaAlunos.appendChild(novoAluno)
-        localStorage.setItem(`ALUNO_${nome}`, `Nome: ${nome},ID: ${id},MÉDIA :${media},SITUAÇÃO: ${situacao}`)
-    })
+
+    alunos = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        let chave = localStorage.key(i);
+        if (chave.startsWith('ALUNOS')) {
+            let alunoJSON = localStorage.getItem(chave);
+            let alunoObj = JSON.parse(alunoJSON);
+            alunos.push(alunoObj);
+
+            const novoAluno = document.createElement('li');
+            novoAluno.innerHTML = `
+                <h1>Nome: ${alunoObj.nome}</h1>
+                <p>ID: ${alunoObj.ID}</p>
+                <p>Média: ${alunoObj.media}</p>
+                <p>Situação: ${alunoObj.situacao}</p>
+                <button onclick="editarAluno(${i})">Editar</button>
+                <button onclick="apagarAluno(${i})">Apagar</button>
+            `;
+            listaAlunos.appendChild(novoAluno);
+        }
+    }
 }
 
 function limparDados(){
@@ -72,11 +80,38 @@ function limparDados(){
     localStorage.clear()
 }
 
+function editarAluno(index) {
+    let alunoJSON = localStorage.getItem(`ALUNOS${index}`);
+    if (!alunoJSON) {
+        alert('Aluno Não Encontrado');
+        return;
+    }
 
-function editarAluno(){
+    let alunoObj = JSON.parse(alunoJSON);
+    let novoNome = prompt('Digite abaixo o Nome do aluno para ser atualizado ->', alunoObj.nome);
+    if (novoNome) {
+        alunoObj.nome = novoNome;
+        localStorage.setItem(`ALUNOS${index}`, JSON.stringify(alunoObj));
 
+        
+        const alunoElement = document.querySelectorAll('#listaAlunos li')[index];
+        if (alunoElement) {
+            alunoElement.querySelector('h1').textContent = `Nome: ${novoNome}`;
+        }
+    } else {
+        alert('Nome do Aluno não foi alterado');
+    }
 }
 
-function apagarAluno(){
 
+function apagarAluno(index){
+    alunos.splice(index,1)
+    localStorage.removeItem(`ALUNOS${index}`)
+    localStorage.clear()
+
+    alunos.forEach((aluno, index) => {
+        localStorage.setItem(`ALUNOS${index}`, JSON.stringify(aluno));
+    });
+
+    adicionarElementos()
 }
